@@ -11,25 +11,14 @@ Stack multi-conteneurs : React + Express + PostgreSQL, conteneurisée avec Docke
 
 ## 1. Installation (une seule fois)
 
-Après un `git clone`, faites ceci avant de lancer le projet :
-
-```bash
-git clone <url-du-repo>
-cd <repo>
-
-# 1) Créer le fichier .env (variables non secrètes)
-cp .env.example .env
-
-# 2) Créer le secret PostgreSQL (mot de passe réel, pas dans .env)
-cp secrets/db_password.txt.example secrets/db_password.txt
-printf 'MonMotDePasseLocal123!' > secrets/db_password.txt
-chmod 644 secrets/db_password.txt
-```
-
 Important :
 - `.env` contient uniquement des variables non secrètes comme `HTTP_PORT`, `DB_USER`, `DB_NAME`
 - `secrets/db_password.txt` contient le vrai mot de passe PostgreSQL
 - ne mettez jamais le mot de passe dans `.env`
+- sur Linux/macOS, vous pouvez aussi faire `chmod 644 secrets/db_password.txt` si Docker signale un problème de permission
+- sur Windows, `chmod` n’existe pas dans le shell standard ; il est généralement inutile, car le fichier est lu par Docker avec les permissions du système d’exploitation
+
+Après un `git clone`, faites ceci avant de lancer le projet :
 
 Sous PowerShell :
 
