@@ -1,5 +1,7 @@
 ﻿# Projet d'évaluation Docker
 
+Réalisé avec Claude sonnet 5.5 moyen : demande d'un template des dockerfiles et compose à partir de la fiche guide de projet fournie et du README de consigne.
+
 Stack multi-conteneurs : React + Express + PostgreSQL, conteneurisée avec Docker Compose.
 
 ## Prérequis
