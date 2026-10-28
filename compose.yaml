@@ -1,0 +1,73 @@
+# Socle commun (dev + prod). Ne pas lancer seul : voir README.
+#  - dev  : docker compose up --build            (charge compose.override.yaml)
+#  - prod : docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+name: docker-eval
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_DB: ${DB_NAME:-evaluation}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      # Postgres 18+ : on monte /var/lib/postgresql (PGDATA est dans un sous-dossier versionné)
+      - db_data:/var/lib/postgresql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - back_net # DB uniquement sur le réseau interne
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      PORT: 3001
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_NAME: ${DB_NAME:-evaluation}
+      DB_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - front_net
+      - back_net
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - front_net
+
+networks:
+  front_net: {}
+  back_net:
+    internal: true # aucun accès extérieur, ni depuis ni vers l'hôte
+
+volumes:
+  db_data:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt

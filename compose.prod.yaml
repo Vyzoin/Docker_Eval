@@ -1,0 +1,31 @@
+# Simulation de production en local :
+# docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+services:
+  db:
+    security_opt:
+      - no-new-privileges:true
+
+  backend:
+    build:
+      target: production
+    image: ${IMAGE_PREFIX:-docker-eval}-backend:${APP_VERSION:-1.0.0}
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    # Pas de port publié : le backend n'est joignable que via le point d'entrée Nginx
+
+  frontend:
+    build:
+      target: production
+    image: ${IMAGE_PREFIX:-docker-eval}-frontend:${APP_VERSION:-1.0.0}
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "${HTTP_PORT:-8080}:8080" # unique point d'entrée
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s

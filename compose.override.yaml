@@ -1,0 +1,35 @@
+# Chargé automatiquement par `docker compose up` : mode DÉVELOPPEMENT
+services:
+  backend:
+    build:
+      target: development
+    image: ${IMAGE_PREFIX:-docker-eval}-backend:dev
+    ports:
+      - "3001:3001" # pratique pour tester l'API directement en dev
+    volumes:
+      - ./backend:/app
+      - /app/node_modules # garde les node_modules de l'image
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      target: development
+    image: ${IMAGE_PREFIX:-docker-eval}-frontend:dev
+    environment:
+      API_PROXY_TARGET: http://backend:3001
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5173/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
